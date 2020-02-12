@@ -4,13 +4,13 @@ import sys
 # connect to the qbittorent Web UI
 qb = Client("http://127.0.0.1:8080/")
 
-# put the credentials (as you configured)
+# 설치된 qbittorent에 접속할 수 있도록 사전에 설정된 계정정보로 설정.
 qb.login("admin", "adminadmin")
 
-# open the torrent file of the file you wanna download
+# 토렌트파일 열기
 file_path = sys.argv[1]
-
 torrent_file = open(file_path, "rb")
+
 # start downloading
 qb.download_from_file(torrent_file)
 # 만약 토렌트 파일이 아닌 마그네틱링크를 이용하고자 한다면 다음과 같이 코드를 바꾸시면 됩니다.
@@ -20,10 +20,10 @@ qb.download_from_file(torrent_file)
 # 다운로드 경로를 바꾸려면 다음과 같이 savepath 옵션을 추가로 설정해주세요.
 # qb.download_from_file(torrent_file, savepath="/the/path/you/want/to/save")
 
-# pause all downloads
+# 모든 다운로드 일시정지
 qb.pause_all()
 
-# resume them
+# 재실행
 qb.resume_all()
 
 def get_size_format(b, factor=1024, suffix="B"):
@@ -39,7 +39,7 @@ def get_size_format(b, factor=1024, suffix="B"):
         b /= factor
     return f"{b:.2f}Y{suffix}"
 
-# return list of torrents
+# 토렌트 다운로드 리스트 입니다.
 torrents = qb.torrents()
 
 for torrent in torrents:
@@ -48,9 +48,3 @@ for torrent in torrents:
     print("Seeds:", torrent["num_seeds"])
     print("File size:", get_size_format(torrent["total_size"]))
     print("Download speed:", get_size_format(torrent["dlspeed"]) + "/s")
-
-# Torrent name: debian-10.2.0-amd64-netinst.iso
-# hash: 86d4c80024a469be4c50bc5a102cf71780310074
-# Seeds: 70
-# File size: 335.00MB
-# Download speed: 606.15KB/s
