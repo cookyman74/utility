@@ -3,6 +3,7 @@ from imbox import Imbox
 
 
 class MyMailBox(Imbox):
+
     def __init__(self, server, port, userid, passwd, ssl=False):
         self.imbox = None
         if server:
