@@ -1,4 +1,3 @@
-
 import re
 
 
@@ -6,12 +5,11 @@ def subnet_calc():
     try:
 
         while True:
-            # Take IP as input
+            # IP주소를 입력받아 저장.
             input_ip = input("\nIP주소를 입력해주세요: ")
 
-            # Validate the IP
+            # 입력받은 IP주소의 유효성을 체크합니다.
             octet_ip = input_ip.split(".")
-            #print octet_ip
             int_octet_ip = [int(i) for i in octet_ip]
 
             if (len(int_octet_ip) == 4) and \
@@ -25,15 +23,14 @@ def subnet_calc():
                 print("잘못된 IP주소 입니다.\n")
                 continue
 
-        # Predefine possible subnet masks
+        # 사용 가능한 서브넷마스크 주소
         masks = [0, 128, 192, 224, 240, 248, 252, 254, 255]
         while True:
 
-            # Take subnet mask as input
+            # 서브넷 마스크 주소 입력요청
             input_subnet = input("\n서브넷 마스크 주소를 입력하세요: ")
 
-            # Validate the subnet mask
-
+            # 서브넷 마스크와 넷마스크비트를 모두 받을수있도록 함.
             p = re.compile('^/')
             m = p.match(input_subnet)
 
@@ -49,9 +46,7 @@ def subnet_calc():
                 else:
                     print("잘못된 서브넷 마스크 주소 입니다.\n")
                     continue
-
             octet_subnet = [int(j) for j in input_subnet.split(".")]
-            # print octet_subnet
             if (len(octet_subnet) == 4) and \
                     (octet_subnet[0] == 255) and \
                     (octet_subnet[1] in masks) and \
@@ -63,14 +58,16 @@ def subnet_calc():
                 print("잘못된 서브넷 마스크 주소 입니다.\n")
                 continue
 
-# Converting IP and subnet to binary
-
+        # IP와 subnet를 바이너리로 바꿉니다.
         ip_in_binary = []
 
-        # Convert each IP octet to binary
+        # 각각의 IP주소 옥텟을 바이너리로 변경.
+        # 예: 192.168.2.1 => ['11000000', '10101000', '10', '1']
         ip_in_bin_octets = [bin(i).split("b")[1] for i in int_octet_ip]
 
         # make each binary octet of 8 bit length by padding zeros
+        # 각 옥텟의 8비트 길이 만큼 각각 0으로 채움.
+        # 예: 192.168.2.1 => ['11000000', '10101000', '10', '1'] => ['11000000', '10101000', '00000010', '00000001']
         for i in range(0,len(ip_in_bin_octets)):
             if len(ip_in_bin_octets[i]) < 8:
                 padded_bin = ip_in_bin_octets[i].zfill(8)
@@ -78,17 +75,17 @@ def subnet_calc():
             else:
                 ip_in_binary.append(ip_in_bin_octets[i])
 
-        # join the binary octets
+        # 각가의 옥텟을 모두 결합시킵니다.
+        #
         ip_bin_mask = "".join(ip_in_binary)
-
-        # print ip_bin_mask
 
         sub_in_bin = []
 
-        # convert each subnet octet to binary
+        # 각가의 서브넷옥텟을 바이너리로 변경
         sub_bin_octet = [bin(i).split("b")[1] for i in octet_subnet]
 
         # make each binary octet of 8 bit length by padding zeros
+        # 모두 0으로 채웁니다.
         for i in sub_bin_octet:
             if len(i) < 8:
                 sub_padded = i.zfill(8)
@@ -96,15 +93,14 @@ def subnet_calc():
             else:
                 sub_in_bin.append(i)
 
-        # print sub_in_bin
         sub_bin_mask = "".join(sub_in_bin)
 
-        # calculating number of hosts
+        # 호스트의 개수를 개산합니다.
         no_zeros = sub_bin_mask.count("0")
         no_ones = 32 - no_zeros
         no_hosts = abs(2 ** no_zeros - 2)
 
-        # Calculating wildcard mask
+        # 와일드 마스크 개수를 개산합니다.
         wild_mask = []
         for i in octet_subnet:
             wild_bit = 255 - i
@@ -112,7 +108,7 @@ def subnet_calc():
 
         wildcard = ".".join([str(i) for i in wild_mask])
 
-        # Calculating the network and broadcast address
+        # 네트워크와 브로드캐스트 주소를 계산합니다.
         network_add_bin = ip_bin_mask[:no_ones] + "0" * no_zeros
         broadcast_add_bin = ip_bin_mask[:no_ones] + "1" * no_zeros
 
@@ -127,14 +123,14 @@ def subnet_calc():
         network_add_dec_final = ".".join([str(int(i,2)) for i in network_add_bin_octet])
         broadcast_add_dec_final = ".".join([str(int(i,2)) for i in broadcast_binoct])
 
-        # Calculate the host IP range
+        # IP주소(호스트주소)의 범위를 계산합니다.
         first_ip_host = network_add_bin_octet[0:3] + [(bin(int(network_add_bin_octet[3],2)+1).split("b")[1].zfill(8))]
         first_ip = ".".join([str(int(i,2)) for i in first_ip_host])
 
         last_ip_host = broadcast_binoct[0:3] + [bin(int(broadcast_binoct[3],2) - 1).split("b")[1].zfill(8)]
         last_ip = ".".join([str(int(i,2)) for i in last_ip_host])
 
-        # print all the computed results
+        # 결과 도출
         print("\n입력한 IP주소: " + input_ip)
         print("입력한 서브넷주소: " + input_subnet)
         print("===================================")
@@ -152,6 +148,5 @@ def subnet_calc():
         print("Seem to have entered an incorrect value, exiting\n")
 
 
-# Calling the above defined function
 if __name__ == '__main__':
     subnet_calc()
