@@ -18,7 +18,6 @@ from mymailbox import MyMailBox
 
 
 def draw_time_graph():
-    #font_fname = 'C:\\Users\\cooky\\AppData\\Local\\Microsoft\\Windows\\Fonts\\D2CodingBold.ttf'  # A font of your choice
     font_fname = 'C:\\Windows\\Fonts\\UttumDotumMR.ttf'  # A font of your choice
     font_name = font_manager.FontProperties(fname=font_fname).get_name()
     rc('font', family=font_name)
