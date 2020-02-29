@@ -1,11 +1,14 @@
 import sys
 import sqlite3
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib import font_manager, rc
+
 
 from collections import Counter
 from konlpy.tag import Twitter
@@ -15,7 +18,8 @@ from mymailbox import MyMailBox
 
 
 def draw_time_graph():
-    font_fname = 'C:\\Users\\cooky\\AppData\\Local\\Microsoft\\Windows\\Fonts\\D2CodingBold.ttf'  # A font of your choice
+    #font_fname = 'C:\\Users\\cooky\\AppData\\Local\\Microsoft\\Windows\\Fonts\\D2CodingBold.ttf'  # A font of your choice
+    font_fname = 'C:\\Windows\\Fonts\\UttumDotumMR.ttf'  # A font of your choice
     font_name = font_manager.FontProperties(fname=font_fname).get_name()
     rc('font', family=font_name)
 
@@ -26,8 +30,10 @@ def draw_time_graph():
     group by word
     order by sum(count) desc limit 1000
     """
-    cursor.execute(sql)
-    rows = cursor.fetchall()
+    with sqlite3.connect("test.db") as db:
+        cursor = db.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()
 
     rows = dict(rows)
 
@@ -47,8 +53,10 @@ class MyWindow(QWidget):
                             where time not like '+%' and time not like '-%'
                             group by substr(time, 1,2) 
                         """
-        cursor.execute(sql_time)
-        data = cursor.fetchall()
+        with sqlite3.connect("test.db") as db:
+            cursor = db.cursor()
+            cursor.execute(sql_time)
+            data = cursor.fetchall()
 
         x = [list[0] for list in data]
         y = [list[1] for list in data]
@@ -62,9 +70,21 @@ class MyWindow(QWidget):
                     select weekends, count(*) from mail_info
                     where weekends like "%,"
                     group by weekends 
+                    order by 
+                        case
+                            WHEN weekends = 'Sun,' THEN 1
+                            WHEN weekends = 'Mon,' THEN 2
+                            WHEN weekends = 'Tue,' THEN 3
+                            WHEN weekends = 'Wed,' THEN 4
+                            WHEN weekends = 'Thu,' THEN 5
+                            WHEN weekends = 'Fri,' THEN 6
+                            WHEN weekends = 'Sat,' THEN 7  
+                        END ASC                               
                 """
-        cursor.execute(sql_week)
-        data = cursor.fetchall()
+        with sqlite3.connect("test.db") as db:
+            cursor = db.cursor()
+            cursor.execute(sql_week)
+            data = cursor.fetchall()
 
         x = [list[0] for list in data]
         y = [list[1] for list in data]
@@ -184,14 +204,40 @@ class MyWindow(QWidget):
 
         if ok and item:
             message_list = imbox.messages(folder=item)
-            print(message_list)
 
+        self.worker = WorkerMailAnalyzer(server, self.progress, message_list)
+        self.worker.finished.connect(self.on_finished)
+        self.worker.start()
+
+    @pyqtSlot()
+    def on_finished(self):
+        print('thread finished')
+        self.draw_time_graph()
+        self.draw_week_graph()
+        try:
+            draw_time_graph()
+            pxmap = QPixmap("wordscloud222.png")
+            self.fig3.setPixmap(pxmap)
+        except Exception as e:
+            print(e)
+
+
+class WorkerMailAnalyzer(QThread):
+    def __init__(self, server, progress, message_list, parent = None):
+        super(WorkerMailAnalyzer, self).__init__(parent)
+        self.server = server
+        self.progress = progress
+        self.message_list = message_list
+
+    def run(self):
         h = Twitter()
-        fullcount = len(message_list)
-
+        fullcount = len(self.message_list)
         progress_count = 0
 
-        for uid, msg in message_list:
+        db = sqlite3.connect("test.db")
+        cursor = db.cursor()
+
+        for uid, msg in self.message_list:
             progress_count += 1
             progress = (progress_count / fullcount) * 100
             try:
@@ -221,7 +267,7 @@ class MyWindow(QWidget):
                                                     weekends, day, month, year, time)
                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
 
-                cursor.execute(sql, (server, uid, body, sent_from_name, sent_from_email, sent_to_count, subject,
+                cursor.execute(sql, (self.server, uid, body, sent_from_name, sent_from_email, sent_to_count, subject,
                                      weekends, eday, emonth, eyear, etime))
 
                 nouns = h.nouns(body)
@@ -231,11 +277,11 @@ class MyWindow(QWidget):
                     sql_insert = "INSERT INTO words_statistics(mailserver, word, count) VALUES (?, ?, ?)"
                     sql_update = "UPDATE words_statistics set count = count + ? where word = ? and mailserver = ?"
                     try:
-                        cursor.execute(sql_insert, (server, n, c))
+                        cursor.execute(sql_insert, (self.server, n, c))
                     except Exception as e:
                         print("단어DB저장오류", e)
                         try:
-                            cursor.execute(sql_update, (n, c, server))
+                            cursor.execute(sql_update, (n, c, self.server))
                         except Exception as e:
                             print(e)
                             continue
@@ -244,15 +290,10 @@ class MyWindow(QWidget):
             except Exception as e:
                 print("입력오류", e)
                 continue
+        print("00000000000000000000000000")
 
-        self.draw_time_graph()
-        self.draw_week_graph()
-        try:
-            draw_time_graph()
-            pxmap = QPixmap("wordscloud222.png")
-            self.fig3.setPixmap(pxmap)
-        except Exception as e:
-            print(e)
+        db.close()
+
 
 if __name__ == "__main__":
     db = sqlite3.connect("test.db")
@@ -286,10 +327,10 @@ if __name__ == "__main__":
             )
         """
     )
+    db.close()
 
     app = QApplication(sys.argv)
     mywindow = MyWindow()
     mywindow.show()
     app.exec_()
 
-    db.close()
