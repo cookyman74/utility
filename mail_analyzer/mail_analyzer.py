@@ -1,5 +1,6 @@
 import sys
 import sqlite3
+import configparser
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -16,9 +17,15 @@ from wordcloud import WordCloud
 
 from mymailbox import MyMailBox
 
+config = configparser.ConfigParser()
+config.read('config.ini')
+db_file = config['DEFAULT']['DB_FILE']
+font = config['DEFAULT']['FONT']
+wordscloud_file = config['DEFAULT']['WORDCSLOUD']
 
-def draw_time_graph():
-    font_fname = 'C:\\Windows\\Fonts\\UttumDotumMR.ttf'  # A font of your choice
+
+def draw_wordscloud():
+    font_fname = font  # A font of your choice
     font_name = font_manager.FontProperties(fname=font_fname).get_name()
     rc('font', family=font_name)
 
@@ -29,7 +36,7 @@ def draw_time_graph():
     group by word
     order by sum(count) desc limit 1000
     """
-    with sqlite3.connect("test.db") as db:
+    with sqlite3.connect(db_file) as db:
         cursor = db.cursor()
         cursor.execute(sql)
         rows = cursor.fetchall()
@@ -37,7 +44,7 @@ def draw_time_graph():
     rows = dict(rows)
 
     cloud = wc.generate_from_frequencies(rows)
-    cloud.to_file("wordscloud222.png")
+    cloud.to_file(wordscloud_file)
 
 
 class MyWindow(QWidget):
@@ -52,7 +59,7 @@ class MyWindow(QWidget):
                             where time not like '+%' and time not like '-%'
                             group by substr(time, 1,2) 
                         """
-        with sqlite3.connect("test.db") as db:
+        with sqlite3.connect(db_file) as db:
             cursor = db.cursor()
             cursor.execute(sql_time)
             data = cursor.fetchall()
@@ -80,7 +87,7 @@ class MyWindow(QWidget):
                             WHEN weekends = 'Sat,' THEN 7  
                         END ASC                               
                 """
-        with sqlite3.connect("test.db") as db:
+        with sqlite3.connect(db_file) as db:
             cursor = db.cursor()
             cursor.execute(sql_week)
             data = cursor.fetchall()
@@ -154,10 +161,7 @@ class MyWindow(QWidget):
         self.fig2 = plt.Figure()
         self.canvas2 = FigureCanvas(self.fig2)
 
-        # self.fig3 = plt.Figure()
-        # self.canvas3 = FigureCanvas(self.fig3)
         self.fig3 = QLabel()
-        # self.canvas3 = FigureCanvas(self.fig3)
 
         self.progress = QProgressBar()
         self.progress.setMaximum(100)
@@ -214,8 +218,8 @@ class MyWindow(QWidget):
         self.draw_time_graph()
         self.draw_week_graph()
         try:
-            draw_time_graph()
-            pxmap = QPixmap("wordscloud222.png")
+            draw_wordscloud()
+            pxmap = QPixmap(wordscloud_file)
             self.fig3.setPixmap(pxmap)
         except Exception as e:
             print(e)
@@ -233,7 +237,7 @@ class WorkerMailAnalyzer(QThread):
         fullcount = len(self.message_list)
         progress_count = 0
 
-        db = sqlite3.connect("test.db")
+        db = sqlite3.connect(db_file)
         cursor = db.cursor()
 
         for uid, msg in self.message_list:
@@ -242,7 +246,6 @@ class WorkerMailAnalyzer(QThread):
             try:
                 self.progress.setValue(progress)
             except Exception as e:
-                print(e)
                 continue
 
             try:
@@ -278,7 +281,6 @@ class WorkerMailAnalyzer(QThread):
                     try:
                         cursor.execute(sql_insert, (self.server, n, c))
                     except Exception as e:
-                        print("단어DB저장오류", e)
                         try:
                             cursor.execute(sql_update, (n, c, self.server))
                         except Exception as e:
@@ -287,15 +289,13 @@ class WorkerMailAnalyzer(QThread):
 
                 db.commit()
             except Exception as e:
-                print("입력오류", e)
                 continue
-        print("00000000000000000000000000")
 
         db.close()
 
 
 if __name__ == "__main__":
-    db = sqlite3.connect("test.db")
+    db = sqlite3.connect(db_file)
     cursor = db.cursor()
 
     cursor.execute(
