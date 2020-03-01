@@ -53,11 +53,30 @@ class MyWindow(QWidget):
         super().__init__()
         self.setupUI()
 
+    def draw_fromwho_chart(self):
+        sql_time = """
+            select sent_from_email, count(*) as mail_count from mail_info
+            group by sent_from_email
+            order by mail_count DESC limit 20       
+        """
+        with sqlite3.connect(db_file) as db:
+            cursor = db.cursor()
+            cursor.execute(sql_time)
+            data = cursor.fetchall()
+
+        x = [list[0] for list in data]
+        y = [list[1] for list in data]
+
+        ax = self.fig0.add_subplot(111)
+        ax.barh(x, y)
+        ax.invert_yaxis()
+        self.canvas0.draw()
+
     def draw_time_graph(self):
         sql_time = """
                             select substr(time, 1,2), count(*) from mail_info
                             where time not like '+%' and time not like '-%'
-                            group by substr(time, 1,2) 
+                            group by substr(time, 1,2)
                         """
         with sqlite3.connect(db_file) as db:
             cursor = db.cursor()
@@ -106,12 +125,14 @@ class MyWindow(QWidget):
 
         # 탭 스크린 설정
         self.tabs = QTabWidget()
+        self.tab0 = QWidget()
         self.tab1 = QWidget()
         self.tab2 = QWidget()
         self.tab3 = QWidget()
         self.tabs.resize(300, 200)
 
         # 탭 추가
+        self.tabs.addTab(self.tab0, "FromWho Chart")
         self.tabs.addTab(self.tab1, "Time Graph")
         self.tabs.addTab(self.tab2, "Week Graph")
         self.tabs.addTab(self.tab3, "Word Cloud")
@@ -155,6 +176,9 @@ class MyWindow(QWidget):
         loginBox.setLayout(loginLayout)
         leftLayout.addWidget(loginBox)
 
+        self.fig0 = plt.Figure()
+        self.canvas0 = FigureCanvas(self.fig0)
+
         self.fig = plt.Figure()
         self.canvas = FigureCanvas(self.fig)
 
@@ -166,9 +190,13 @@ class MyWindow(QWidget):
         self.progress = QProgressBar()
         self.progress.setMaximum(100)
 
+        self.tab0.layout = QVBoxLayout()
+        self.tab0.layout.addWidget(self.canvas0)
+        self.tab0.layout.addWidget(self.progress)
+        self.tab0.setLayout(self.tab0.layout)
+
         self.tab1.layout = QVBoxLayout()
         self.tab1.layout.addWidget(self.canvas)
-        self.tab1.layout.addWidget(self.progress)
         self.tab1.setLayout(self.tab1.layout)
 
         self.tab2.layout = QVBoxLayout()
@@ -215,6 +243,7 @@ class MyWindow(QWidget):
     @pyqtSlot()
     def on_finished(self):
         print('thread finished')
+        self.draw_fromwho_chart()
         self.draw_time_graph()
         self.draw_week_graph()
         try:
