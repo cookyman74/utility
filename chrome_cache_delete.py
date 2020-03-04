@@ -22,12 +22,26 @@ RESULT = True
 
 while RESULT:
     RESULT = False
-    search_url = input("삭제하고 싶은 URL에 포함된 단어를 써주세요?")
-    for row in cur.execute(f"select id, url FROM urls WHERE url LIKE '%{search_url}%'"):
+    print("1. URL으로 검색하기")
+    print("2. 사이트 Title으로 검색하기")
+    print("3. URL, Title에 포함된 모든 항목 검색하기")
+    option = int(input("검색옵션을 선택해주세요(1 ~ 3)"))
+    search_url = input("삭제하고 싶은 단어를 작성해주세요?")
+    print("=" * 50)
+
+    if option == 1:
+        sql = f"select id, title, url FROM urls WHERE url LIKE '%{search_url}%'"
+    elif option == 2:
+        sql = f"select id, title, url FROM urls WHERE title LIKE '%{search_url}%'"
+    else:
+        sql = f"select id, title, url FROM urls WHERE url LIKE '%{search_url}%' or title LIKE '%{search_url}%'"
+
+    for row in cur.execute(sql):
         print(row)
         id = row[0]
         ids.append((id,))
 
+    print("=" * 50)
     confirm = input("삭제목록이 맞습니까?(Y or N)")
     if confirm == "Y" or confirm == "y":
         cur.executemany('DELETE FROM urls WHERE id=?', ids)
