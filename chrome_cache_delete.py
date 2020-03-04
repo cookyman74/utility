@@ -22,8 +22,8 @@ RESULT = True
 
 while RESULT:
     RESULT = False
-    print("1. URL으로 검색하기")
-    print("2. 사이트 Title으로 검색하기")
+    print("1. URL에서 검색하기")
+    print("2. 사이트 Title에서 검색하기")
     print("3. URL, Title에 포함된 모든 항목 검색하기")
     option = int(input("검색옵션을 선택해주세요(1 ~ 3)"))
     search_url = input("삭제하고 싶은 단어를 작성해주세요?")
