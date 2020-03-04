@@ -2,11 +2,6 @@ import sqlite3
 import sys
 import os
 
-paths = [
-    os.path.expanduser("~/.config/google-chrome/Default/Bookmarks"),
-    os.path.expanduser("~/Library/Application Support/Google/Chrome/Default/Bookmarks"),
-    os.path.expanduser("~\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Bookmarks")
-]
 path = ""
 if "linux" in sys.platform.lower():
     path = "~/.config/google-chrome/Default/History"
@@ -17,7 +12,6 @@ if "win32" in sys.platform.lower():
 path = os.path.expanduser(path)
 
 conn = sqlite3.connect(path)
-
 cur = conn.cursor()
 
 result = True
