@@ -5,7 +5,6 @@ import shutil
 import time
 import pandas as pd
 import numpy as np
-from tqdm import tqdm
 
 BOOK_TITLE = 'Book Title'
 CATEGORY   = 'English Package Name'
