@@ -1,10 +1,7 @@
 import sqlite3
 import os
-import numpy
 import argparse
 import pandas as pd
-import requests
-import shutil
 from helper import *
 
 parser = argparse.ArgumentParser()
