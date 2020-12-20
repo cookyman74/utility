@@ -54,7 +54,7 @@ def mail_dir_select(imbox, txt):
         print(maildir)
         return [v for i, v in maildir.items()]
     else:
-        return result
+        return [result]
 
 
 if __name__ == "__main__":
@@ -81,15 +81,19 @@ if __name__ == "__main__":
 
         status, folder_list = imbox.folders()
         mail_box_dir = mail_dir_select(imbox, "select mail box: ")
-
         # if mail_box_dir:
         #     folder_messages = imbox.messages(folder=mail_box_dir)
         # else:
         #     folder_messages = imbox.messages()
 
         for message_box in mail_box_dir:
-            print("메세지박스: ", message_box)
-            folder_messages = imbox.messages(folder=message_box)
+            print("메일박스: ", message_box)
+            try:
+                folder_messages = imbox.messages(folder='"{}"'.format(message_box))
+            except Exception as err:
+                print("메일함 에러: ", err)
+                print("다음 메일함 진행")
+            
             for uid, message in folder_messages:
                 try:
                     email_datetime = message.date.split(" ")
