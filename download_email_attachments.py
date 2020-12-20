@@ -45,10 +45,16 @@ def mail_dir_select(imbox, txt):
             i +=1
             maildir[i] = mailbox_name
             print("[%d] %s" % (i, mailbox_name))
+    print("[%d] 전체 메일함" % (i + 1))
 
     selected_num = input(txt)
-    # selected_num = 3
-    return maildir.get(int(selected_num), None)
+    result = maildir.get(int(selected_num), 0)
+
+    if result == 0:
+        print(maildir)
+        return [v for i, v in maildir.items()]
+    else:
+        return result
 
 
 if __name__ == "__main__":
@@ -76,31 +82,35 @@ if __name__ == "__main__":
         status, folder_list = imbox.folders()
         mail_box_dir = mail_dir_select(imbox, "select mail box: ")
 
-        if mail_box_dir:
-            folder_messages = imbox.messages(folder=mail_box_dir)
-        else:
-            folder_messages = imbox.messages()
+        # if mail_box_dir:
+        #     folder_messages = imbox.messages(folder=mail_box_dir)
+        # else:
+        #     folder_messages = imbox.messages()
 
-        for uid, message in folder_messages:
-            try:
-                email_datetime = message.date.split(" ")
+        for message_box in mail_box_dir:
+            print("메세지박스: ", message_box)
+            folder_messages = imbox.messages(folder=message_box)
+            for uid, message in folder_messages:
+                try:
+                    email_datetime = message.date.split(" ")
 
-                day = email_datetime[1]
-                month = cal.get(email_datetime[2])
-                year = email_datetime[3]
-            except:
-                day = "DD"
-                month = "MM"
-                year = "YYYY"
+                    day = email_datetime[1]
+                    month = cal.get(email_datetime[2])
+                    year = email_datetime[3]
+                except:
+                    day = "DD"
+                    month = "MM"
+                    year = "YYYY"
 
-            if message.attachments:
-                for list in message.attachments:
-                    if not list:
-                        continue
+                if message.attachments:
+                    print("첨부파일 날짜: ", message.date)
+                    for list in message.attachments:
+                        if not list:
+                            continue
 
-                    filename = str(year)+"."+str(month)+"."+str(day)+"_"+str(list.get('filename'))
-                    fileFullPath = os.path.join(detach_dir, mail_server[0], filename)
-                    raw_report = list['content'].read()
-                    f = open(fileFullPath, 'wb')
-                    f.write(raw_report)
-                    f.close()
+                        filename = str(year)+"."+str(month)+"."+str(day)+"_"+str(list.get('filename'))
+                        fileFullPath = os.path.join(detach_dir, mail_server[0], filename)
+                        raw_report = list['content'].read()
+                        f = open(fileFullPath, 'wb')
+                        f.write(raw_report)
+                        f.close()
