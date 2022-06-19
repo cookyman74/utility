@@ -8,7 +8,7 @@ def send_mail(title, body):
     smtp = smtplib.SMTP('smtp.gmail.com', 587)
     smtp.ehlo()
     smtp.starttls()
-    smtp.login('cookyman@gmail.com', 'ihpqblanckrdrjcn')
+    smtp.login('cookyman@gmail.com', 'password')
 
     msg = MIMEText(body)
     msg['Subject'] = title
